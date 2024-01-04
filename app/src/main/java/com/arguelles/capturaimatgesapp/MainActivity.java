@@ -50,6 +50,15 @@ public class MainActivity extends AppCompatActivity {
         currentPhotoPath = getLastPhotoPath();
 
         displayLastTakenPhoto();
+        Button historialButton = findViewById(R.id.historialButton);
+
+        historialButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, GaleriaActivity.class);
+                startActivity(intent);
+            }
+        });
 
         cameraActivityResultLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
