@@ -26,19 +26,25 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_CAMERA_PERMISSION = 1;
     private static final String PREF_LAST_PHOTO_PATH = "last_photo_path";
 
-
     private ImageView imageView;
     private ActivityResultLauncher<Intent> cameraActivityResultLauncher;
     private ActivityResultLauncher<Intent> galleryActivityResultLauncher;
     String currentPhotoPath;
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        displayLastTakenPhoto();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +86,9 @@ public class MainActivity extends AppCompatActivity {
                                 Uri uri = data.getData();
                                 ImageView imageView = findViewById(R.id.imgView);
                                 imageView.setImageURI(uri);
+
+                                currentPhotoPath = getPathFromUri(uri); // Obtener el path desde la Uri
+                                saveLastPhotoPath(currentPhotoPath);
                             }
                         }
                     }
@@ -105,7 +114,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void openCamera() {
         if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-
             dispatchTakePictureIntent();
         } else {
             requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
@@ -120,43 +128,37 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     private void openGallery() {
-        // Crear Intent
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("image/jpg");
         intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-        //Launch activity to get result
         galleryActivityResultLauncher.launch(intent);
     }
 
     private File createImageFile() throws IOException {
-        // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File image = File.createTempFile(
-                imageFileName,  /* prefix */
-                ".jpg",         /* suffix */
-                storageDir      /* directory */
+                imageFileName,
+                ".jpg",
+                storageDir
         );
 
-        // Save a file: path for use with ACTION_VIEW intents
         currentPhotoPath = image.getAbsolutePath();
         return image;
     }
 
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        // Create the File where the photo should go
+
         File photoFile = null;
         try {
             photoFile = createImageFile();
         } catch (IOException ex) {
-            // Error occurred while creating the File
-
+            ex.printStackTrace();
         }
-        // Continue only if the File was successfully created
+
         if (photoFile != null) {
             Uri photoURI = FileProvider.getUriForFile(this,
                     "com.example.android.fileprovider",
@@ -166,7 +168,6 @@ public class MainActivity extends AppCompatActivity {
 
             saveLastPhotoPath(currentPhotoPath);
 
-
             cameraActivityResultLauncher.launch(takePictureIntent);
         } else {
             Toast.makeText(this, "Error al crear el archivo", Toast.LENGTH_SHORT).show();
@@ -174,12 +175,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void displayLastTakenPhoto() {
-        if (currentPhotoPath != null) {
-            File imgFile = new File(currentPhotoPath);
+        String lastPhotoPath = getLastPhotoPath();
+
+        if (!lastPhotoPath.isEmpty()) {
+            File imgFile = new File(lastPhotoPath);
 
             if (imgFile.exists()) {
                 Uri photoUri = Uri.fromFile(imgFile);
-
                 imageView.setImageURI(photoUri);
             } else {
                 Toast.makeText(this, "La última foto no existe", Toast.LENGTH_SHORT).show();
@@ -188,21 +190,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String getLastPhotoPath() {
-        SharedPreferences preferences = getSharedPreferences(
-                PreferenceManager.getDefaultSharedPreferencesName(this),
-                MODE_PRIVATE
-        );
-        return preferences.getString(PREF_LAST_PHOTO_PATH, null);
+        return getPreferences(MODE_PRIVATE).getString(PREF_LAST_PHOTO_PATH, "");
     }
 
     private void saveLastPhotoPath(String path) {
-        SharedPreferences preferences = getSharedPreferences(
-                PreferenceManager.getDefaultSharedPreferencesName(this),
-                MODE_PRIVATE
-        );
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString(PREF_LAST_PHOTO_PATH, path);
-        editor.apply();
+        getPreferences(MODE_PRIVATE).edit().putString(PREF_LAST_PHOTO_PATH, path).apply();
+    }
+
+    private String getPathFromUri(Uri uri) {
+        // Implementa la lógica para obtener el path real desde la Uri
+        // Esto puede requerir consultas a la base de datos de medios o el uso de la API DocumentFile.
+        // En este ejemplo, solo se devuelve el path de la Uri.
+        return uri.getPath();
     }
 }
-

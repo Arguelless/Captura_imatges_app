@@ -1,5 +1,6 @@
 package com.arguelles.capturaimatgesapp;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -7,7 +8,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class GaleriaActivity extends AppCompatActivity {
 
@@ -40,12 +43,9 @@ public class GaleriaActivity extends AppCompatActivity {
 
     // Método para obtener la lista de rutas de fotos (puedes implementar tu propia lógica aquí)
     private List<String> getPhotoPaths() {
-        // Implementa la lógica para obtener la lista de rutas de fotos
-        // Ejemplo:
-        // List<String> photoPaths = new ArrayList<>();
-        // photoPaths.add("/ruta/foto1.jpg");
-        // photoPaths.add("/ruta/foto2.jpg");
-        // return photoPaths;
-        return new ArrayList<>(); // Cambia esto con tu lógica real
+        SharedPreferences preferences = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        Set<String> photoPathsSet = preferences.getStringSet("last_photo_path", new HashSet<>());
+
+        return new ArrayList<>(photoPathsSet);
     }
 }
